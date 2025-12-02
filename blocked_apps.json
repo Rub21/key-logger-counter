@@ -1,0 +1,32 @@
+{
+  "description": "Lista de aplicaciones que se deben evitar/bloquear para no capturar datos",
+  "blocked_applications": [
+    "Google Chrome",
+    "Chrome",
+    "Safari",
+    "Firefox",
+    "Microsoft Edge",
+    "Edge",
+    "Opera",
+    "Brave Browser",
+    "Vivaldi",
+    "Tor Browser",
+    "1Password",
+    "LastPass",
+    "Bitwarden",
+    "Dashlane",
+    "KeePass",
+    "KeePassX",
+    "KeePassXC",
+    "Keychain Access",
+    "Credential Manager",
+    "Windows Credential Manager",
+    "Password Manager"
+  ],
+  "notes": [
+    "Las aplicaciones en esta lista NO capturarán datos cuando estén activas",
+    "Puedes agregar más aplicaciones según tus necesidades",
+    "Los nombres deben coincidir exactamente con el nombre de la aplicación en tu sistema"
+  ]
+}
+
