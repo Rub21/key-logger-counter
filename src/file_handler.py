@@ -4,7 +4,11 @@
 import csv
 import json
 import logging
-from .config import char_count_file, temp_data_file, ALL_POSSIBLE_KEYS, get_csv_headers, dynamic_combinations, STATS_HEADERS
+from .config import (
+    char_count_file, temp_data_file, ALL_POSSIBLE_KEYS, get_csv_headers, 
+    dynamic_combinations, STATS_HEADERS, MOUSE_STATS_BASE_HEADERS, APP_INFO_HEADERS,
+    get_mouse_stats_headers
+)
 
 def setup_temp_json():
     """Inicializa el archivo JSON temporal para guardar datos durante la ejecución."""
@@ -67,9 +71,20 @@ def update_csv_headers(new_combinations):
     
     return False
 
-def save_to_json(timestamp_numeric, counts, stats, active_app):
-    """Guarda datos temporales en JSON."""
-    if not counts:  # No guardar si no hubo teclas
+def save_to_json(timestamp_numeric, counts, stats, active_app, app_info=None, mouse_stats=None, mouse_counts=None):
+    """Guarda datos temporales en JSON.
+    
+    Args:
+        timestamp_numeric: Timestamp del intervalo
+        counts: Conteos de teclas presionadas
+        stats: Estadísticas del teclado
+        active_app: Nombre de la aplicación activa
+        app_info: Diccionario con información detallada de la aplicación
+        mouse_stats: Estadísticas del mouse
+        mouse_counts: Conteos de eventos del mouse
+    """
+    # Guardar incluso si no hay teclas (puede haber datos del mouse)
+    if not counts and (not mouse_stats or mouse_stats.get('total_clicks', 0) == 0):
         return
     
     # Detectar nuevas combinaciones y agregarlas al conjunto global
@@ -103,6 +118,18 @@ def save_to_json(timestamp_numeric, counts, stats, active_app):
         'stats': stats
     }
     
+    # Agregar información de la aplicación si está disponible
+    if app_info:
+        interval_data['app_info'] = app_info
+    
+    # Agregar estadísticas del mouse si están disponibles
+    if mouse_stats:
+        interval_data['mouse_stats'] = mouse_stats
+    
+    # Agregar conteos del mouse si están disponibles
+    if mouse_counts:
+        interval_data['mouse_counts'] = dict(mouse_counts)
+    
     # Agregar intervalo a los datos
     data['intervals'].append(interval_data)
     
@@ -110,8 +137,9 @@ def save_to_json(timestamp_numeric, counts, stats, active_app):
     with open(temp_data_file, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
     
-    total_keys = sum(counts.values())
-    logging.info(f"Saved to JSON: {total_keys} keystrokes ({len(counts)} unique) - App: {active_app}")
+    total_keys = sum(counts.values()) if counts else 0
+    total_clicks = mouse_stats.get('total_clicks', 0) if mouse_stats else 0
+    logging.info(f"Saved to JSON: {total_keys} keystrokes, {total_clicks} clicks - App: {active_app}")
 
 def convert_json_to_csv():
     """Convierte el JSON temporal a CSV al finalizar."""
@@ -152,26 +180,45 @@ def convert_json_to_csv():
             # Convertir cada intervalo a fila CSV
             for interval in intervals:
                 timestamp = interval['timestamp']
-                active_app = interval['active_application']
-                counts = interval['counts']
-                stats = interval['stats']
+                active_app = interval.get('active_application', 'Unknown')
+                counts = interval.get('counts', {})
+                stats = interval.get('stats', {})
+                app_info = interval.get('app_info', {})
+                mouse_stats = interval.get('mouse_stats', {})
                 
-                # Crear fila
-                row = {'timestamp': timestamp, 'active_application': active_app}
+                # Crear fila base
+                row = {'timestamp': timestamp}
+                
+                # Agregar información de la aplicación
+                row['active_application'] = active_app
+                row['app_bundle_id'] = app_info.get('bundle_id', 'Unknown')
+                row['app_window_title'] = app_info.get('window_title', 'Unknown')
+                row['app_process_id'] = app_info.get('process_id', '')
+                
+                # Agregar estadísticas del teclado
                 row.update(stats)
                 
-                # Inicializar todas las columnas con 0
+                # Agregar estadísticas del mouse
+                row.update(mouse_stats)
+                
+                # Inicializar todas las columnas de teclas con 0
+                # Excluir campos conocidos (timestamp, stats, app_info, mouse_stats)
+                excluded_fields = set(['timestamp'] + APP_INFO_HEADERS + STATS_HEADERS + 
+                                     MOUSE_STATS_BASE_HEADERS + 
+                                     [f'clicks_screen_{i}' for i in range(10)] +  # Hasta 10 pantallas
+                                     [f'scroll_screen_{i}' for i in range(10)])
+                
                 for key in headers:
-                    if key not in ['timestamp', 'active_application'] + STATS_HEADERS:
+                    if key not in excluded_fields and key not in row:
                         row[key] = 0
                 
-                # Llenar con conteos reales
+                # Llenar con conteos reales de teclas
                 for char, count in counts.items():
                     if char in headers:
                         row[char] = count
                 
                 # Escribir fila
-                filtered_row = {k: row.get(k, 0) for k in headers}
+                filtered_row = {k: row.get(k, 0 if k not in ['timestamp', 'app_process_id'] else '') for k in headers}
                 writer.writerow(filtered_row)
         
         total_intervals = len(intervals)

@@ -9,9 +9,10 @@ from collections import Counter
 from pynput import keyboard
 
 from .config import STATS_INTERVAL
-from .app_detection import get_active_application, is_blocked_application
+from .app_detection import get_active_application, is_blocked_application, get_active_application_info
 from .key_processing import get_key_name, calculate_statistics
 from .file_handler import save_to_json
+from .mouse_tracking import get_mouse_statistics, get_mouse_counts, start_mouse_listener
 
 # Variables globales de estado
 running = True
@@ -176,6 +177,7 @@ def save_character_counts(blocked_applications):
         timestamp_dt = datetime.datetime.now()
         timestamp_numeric = timestamp_dt.timestamp()
         active_app = get_active_application()
+        app_info = get_active_application_info()
         
         # Si la app está bloqueada, resetear contador y continuar
         if is_blocked_application(active_app, blocked_applications):
@@ -187,7 +189,7 @@ def save_character_counts(blocked_applications):
             threading.Timer(STATS_INTERVAL, save_character_counts, args=(blocked_applications,)).start()
             return
         
-        # Obtener conteos y estadísticas temporales
+        # Obtener conteos y estadísticas temporales del teclado
         with character_lock:
             counts = dict(character_counter)
             character_counter.clear()
@@ -198,12 +200,16 @@ def save_character_counts(blocked_applications):
             inter_key_times.clear()
             last_key_time = None
         
-        # Calcular estadísticas
+        # Calcular estadísticas del teclado
         total_keystrokes = sum(counts.values())
         stats = calculate_statistics(hold_times_copy, inter_key_times_copy, total_keystrokes, STATS_INTERVAL)
         
-        # Guardar al JSON temporal
-        save_to_json(timestamp_numeric, counts, stats, active_app)
+        # Obtener estadísticas del mouse
+        mouse_stats = get_mouse_statistics(STATS_INTERVAL)
+        mouse_counts = get_mouse_counts()
+        
+        # Guardar al JSON temporal (incluye datos del teclado, mouse y app)
+        save_to_json(timestamp_numeric, counts, stats, active_app, app_info, mouse_stats, mouse_counts)
         
         # Programar siguiente guardado
         threading.Timer(STATS_INTERVAL, save_character_counts, args=(blocked_applications,)).start()
@@ -223,13 +229,22 @@ def cleanup():
     convert_json_to_csv()
 
 def start_listener(blocked_applications):
-    """Inicia el listener del teclado."""
+    """Inicia los listeners del teclado y mouse."""
     def on_press_wrapper(key):
         on_press(key, blocked_applications)
     
     def on_release_wrapper(key):
         on_release(key, blocked_applications)
     
+    # Iniciar listener del mouse en un thread separado
+    mouse_thread = threading.Thread(
+        target=start_mouse_listener,
+        args=(blocked_applications,),
+        daemon=True
+    )
+    mouse_thread.start()
+    
+    # Iniciar listener del teclado (bloqueante)
     with keyboard.Listener(on_press=on_press_wrapper, on_release=on_release_wrapper) as listener:
         listener.join()
 

@@ -30,17 +30,19 @@ def main():
     setup_temp_json()
     
     print("="*70)
-    print("KEYLOGGER DE CONTEO DE CARACTERES")
+    print("KEYLOGGER DE CONTEO DE CARACTERES Y TRACKING DE MOUSE")
     print("="*70)
     print(f"✓ Acumula pulsaciones en MEMORIA durante {STATS_INTERVAL} segundos")
     print(f"✓ Guarda datos temporales en JSON cada {STATS_INTERVAL} segundos")
     print(f"✓ Convierte JSON a CSV al finalizar (Ctrl+C)")
     print(f"✓ NO guarda orden ni palabras completas - Solo conteos")
     print(f"✓ Captura combinaciones de teclas (Ctrl+C, Shift+A, etc.)")
+    print(f"✓ Tracking del mouse: posición de clics, tipo de clic, scroll")
+    print(f"✓ Detección de aplicación: nombre, bundle ID, título de ventana, PID")
     print(f"✓ Combinaciones conocidas: {len(combinations)}")
     print(f"✓ Aplicaciones bloqueadas: {len(blocked_applications)}")
     print(f"✓ CSV final: {char_count_file}")
-    print(f"\nFlujo: Presionar teclas → Acumular en memoria → Guardar JSON cada {STATS_INTERVAL}s → CSV al finalizar")
+    print(f"\nFlujo: Presionar teclas/Mover mouse → Acumular en memoria → Guardar JSON cada {STATS_INTERVAL}s → CSV al finalizar")
     print(f"Presiona Ctrl+C para detener y convertir a CSV\n")
     
     # Iniciar guardado periódico

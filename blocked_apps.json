@@ -1,14 +1,6 @@
 {
   "description": "Lista de aplicaciones que se deben evitar/bloquear para no capturar datos",
   "blocked_applications": [
-    "Google Chrome",
-    "Chrome",
-    "Safari",
-    "Firefox",
-    "Microsoft Edge",
-    "Edge",
-    "Opera",
-    "Brave Browser",
     "Vivaldi",
     "Tor Browser",
     "1Password",
