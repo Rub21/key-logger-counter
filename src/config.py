@@ -2,10 +2,9 @@
 # Configuración y constantes del keylogger
 
 from pathlib import Path
-import random
-import string
 import json
 import logging
+from datetime import datetime
 
 # Directorio base
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -18,15 +17,15 @@ log_system = BASE_DIR / "keylogger_char_count.log"
 blocked_apps_file = BASE_DIR / "blocked_apps.json"
 combinations_file = BASE_DIR / "key_combinations.json"  # Archivo JSON para guardar combinaciones
 
-# Generar nombre de archivo aleatorio
-random_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
-char_count_file = data_folder / f"keyboard-data-{random_suffix}.csv"
-temp_data_file = data_folder / f"keyboard-data-{random_suffix}.json"  # Archivo temporal JSON
+# Generar nombre de archivo con timestamp (formato: data_YYYYMMDD_HHMMSS)
+timestamp_suffix = datetime.now().strftime("%Y%m%d_%H%M%S")
+char_count_file = data_folder / f"data_{timestamp_suffix}.csv"
+temp_data_file = data_folder / f"data_{timestamp_suffix}.json"  # Archivo temporal JSON
 
 # Configuración de intervalo
 STATS_INTERVAL = 5  # Segundos entre guardados
 
-# Headers de estadísticas
+# Headers de estadísticas del teclado
 STATS_HEADERS = [
     'avg_hold_time_ms',      # Tiempo promedio de presión (hold time)
     'avg_inter_key_time_ms', # Tiempo promedio entre pulsaciones
@@ -35,6 +34,66 @@ STATS_HEADERS = [
     'max_inter_key_time_ms', # Tiempo máximo entre pulsaciones
     'keystrokes_per_second', # Velocidad de escritura (pulsaciones/segundo)
     'total_keystrokes',      # Total de teclas presionadas en el intervalo
+]
+
+# Headers de estadísticas del mouse (base - se expanden dinámicamente con pantallas)
+MOUSE_STATS_BASE_HEADERS = [
+    'total_clicks',              # Total de clics en el intervalo
+    'left_clicks',               # Clics con botón izquierdo
+    'right_clicks',              # Clics con botón derecho
+    'middle_clicks',             # Clics con botón medio
+    'scroll_events',             # Eventos de scroll
+    'avg_x_position',            # Posición X promedio de los clics
+    'avg_y_position',            # Posición Y promedio de los clics
+    'min_x',                     # Posición X mínima
+    'max_x',                     # Posición X máxima
+    'min_y',                     # Posición Y mínima
+    'max_y',                     # Posición Y máxima
+    'avg_inter_click_time_ms',   # Tiempo promedio entre clics (ms)
+    'clicks_per_second',         # Velocidad de clics (clics/segundo)
+    'total_screens',             # Número total de pantallas detectadas
+    'most_used_screen',          # Índice de la pantalla más usada
+    'scroll_up',                 # Eventos de scroll hacia arriba
+    'scroll_down',               # Eventos de scroll hacia abajo
+    'scroll_left',               # Eventos de scroll hacia izquierda
+    'scroll_right',              # Eventos de scroll hacia derecha
+    'avg_scroll_magnitude',      # Magnitud promedio del scroll
+    'avg_inter_scroll_time_ms',  # Tiempo promedio entre scrolls (ms)
+    'scrolls_per_second',        # Velocidad de scrolls (scrolls/segundo)
+]
+
+def get_mouse_stats_headers(max_screens=3):
+    """Obtiene los headers de estadísticas del mouse, expandidos dinámicamente por pantallas.
+    
+    Args:
+        max_screens: Número máximo de pantallas a incluir (por defecto 3)
+    """
+    headers = MOUSE_STATS_BASE_HEADERS.copy()
+    
+    # Agregar headers dinámicos por pantalla
+    # Se expandirán automáticamente según las pantallas detectadas
+    try:
+        from .screen_detection import get_total_screens
+        detected_screens = get_total_screens()
+        max_screens = max(max_screens, detected_screens)
+    except:
+        pass  # Usar el valor por defecto si hay error
+    
+    for i in range(max_screens):
+        headers.append(f'clicks_screen_{i}')
+        headers.append(f'scroll_screen_{i}')
+    
+    return headers
+
+# Para compatibilidad, mantener MOUSE_STATS_HEADERS
+MOUSE_STATS_HEADERS = MOUSE_STATS_BASE_HEADERS
+
+# Headers de información de aplicación
+APP_INFO_HEADERS = [
+    'active_application',        # Nombre de la aplicación activa
+    'app_bundle_id',             # Bundle ID (macOS) o ruta del ejecutable
+    'app_window_title',          # Título de la ventana activa
+    'app_process_id',            # ID del proceso
 ]
 
 def get_all_possible_keys():
@@ -94,7 +153,8 @@ def save_combinations(combinations):
 def get_csv_headers():
     """Obtiene los headers del CSV incluyendo combinaciones dinámicas."""
     all_keys = ALL_POSSIBLE_KEYS + sorted(dynamic_combinations)
-    return ['timestamp'] + all_keys + STATS_HEADERS + ['active_application']
+    mouse_stats_headers = get_mouse_stats_headers()
+    return (['timestamp'] + all_keys + STATS_HEADERS + mouse_stats_headers + APP_INFO_HEADERS)
 
 CSV_HEADERS = get_csv_headers()
 

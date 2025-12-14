@@ -1,17 +1,33 @@
 # Keylogger de Conteo de Caracteres
 
+
 Keylogger que cuenta cuántas veces se presionó cada carácter en intervalos de 5 segundos. **NO guarda palabras completas ni el orden de los caracteres**, solo conteos agregados.
 
-## 🎯 Características
 
-- ✅ Cuenta caracteres presionados cada 5 segundos
-- ✅ Guarda solo conteos (ej: 'a': 5, 'b': 3)
-- ✅ NO guarda el orden ni palabras completas
-- ✅ Incluye nombre de la aplicación activa
-- ✅ Captura combinaciones de teclas (Ctrl+C, Shift+A, etc.)
-- ✅ Guarda datos temporales en JSON durante la ejecución
-- ✅ Convierte automáticamente a CSV al finalizar (Ctrl+C)
-- ✅ Bloquea aplicaciones sensibles (navegadores, gestores de contraseñas)
+## 🚀 Inicio Rápido
+
+```bash
+# 1. Instalar dependencias
+pip install -r requirements-minimal.txt
+
+# 2. Ejecutar
+python main.py
+
+# 3. Usar teclado y mouse normalmente...
+
+# 4. Detener con Ctrl+C (convierte automáticamente a CSV)
+```
+
+## ✨ Características
+
+- ✅ **Teclado**: Cuenta caracteres presionados cada 5 segundos
+- ✅ **Mouse**: Captura clics, posición, scroll y pantalla usada
+- ✅ **Aplicación**: Detecta nombre, bundle ID, título de ventana y PID
+- ✅ **Estadísticas**: Velocidad de escritura, tiempos entre teclas/clics, etc.
+- ✅ **Combinaciones**: Detecta automáticamente Ctrl+C, Shift+A, etc.
+- ✅ **Múltiples pantallas**: Identifica en qué pantalla ocurren los eventos
+- ✅ **Scroll mejorado**: Dirección, magnitud y velocidad del scroll
+- ✅ **Bloqueo inteligente**: No captura en navegadores ni gestores de contraseñas
 
 ## 📋 Requisitos
 
@@ -27,6 +43,8 @@ keylogger-simulator/
 │   ├── config.py            # Configuración y constantes
 │   ├── app_detection.py     # Detección de aplicación activa
 │   ├── key_processing.py    # Procesamiento de teclas y estadísticas
+│   ├── mouse_tracking.py    # Tracking de eventos del mouse
+│   ├── screen_detection.py  # Detección de múltiples pantallas
 │   ├── file_handler.py      # Manejo de archivos CSV/JSON
 │   └── keylogger.py         # Lógica principal del keylogger
 ├── keyboard_data/            # Carpeta donde se guardan los CSVs y JSONs temporales
@@ -36,143 +54,143 @@ keylogger-simulator/
 └── requirements-minimal.txt  # Dependencias
 ```
 
-## 🚀 Instalación
+## ✨ Qué Captura
 
+### ⌨️ Teclado
+- Conteo de cada tecla presionada (a-z, 0-9, símbolos, teclas especiales)
+- Combinaciones de teclas (Ctrl+C, Shift+A, Cmd+V, etc.)
+- Estadísticas temporales: velocidad, tiempos de presión, intervalos entre teclas
 
-### Opción 1: Instalación mínima (si hay problemas)
-Si tienes problemas con las dependencias opcionales, usa la versión mínima:
-```bash
-pip install -r requirements-minimal.txt
-```
-El keylogger funcionará pero mostrará "Unknown" en `active_application`.
+### 🖱️ Mouse
+- **Clics**: Total, izquierdo, derecho, medio
+- **Posición**: Coordenadas X/Y promedio, mínimas y máximas
+- **Scroll**: Dirección (arriba, abajo, izquierda, derecha), magnitud, velocidad
+- **Pantallas**: Detecta múltiples monitores y registra en qué pantalla ocurren los eventos
+- **Estadísticas**: Tiempo entre clics, velocidad de clics, velocidad de scroll
 
-**Si tienes problemas con dependencias opcionales:**
-
-**macOS** - Si `pyobjc-framework-AppKit` falla:
-```bash
-# Opción 1: Instalar sin versión específica
-pip install pyobjc-framework-AppKit
-
-# Opción 2: Usar versión mínima
-pip install -r requirements-minimal.txt
-```
-
-**Windows** - Si `pywin32` falla:
-```bash
-pip install pywin32
-```
-
-**Linux** - Para detectar aplicaciones activas, instala `xdotool`:
-```bash
-sudo apt-get install xdotool  # Ubuntu/Debian
-sudo yum install xdotool      # CentOS/RHEL
-```
-
-**Nota**: Las dependencias de detección de aplicación son **opcionales**. El keylogger funcionará sin ellas, pero mostrará "Unknown" en la columna `active_application`.
-
-## 💻 Uso
-
-1. Ejecuta el keylogger:
-```bash
-python main.py
-```
-
-2. Escribe normalmente en tu computadora
-
-3. Los datos se guardan temporalmente en JSON cada 5 segundos
-
-4. Para detener y convertir a CSV, presiona `Ctrl+C`
-
-## 📊 Formato de Datos
-
-### Flujo de Guardado
-
-1. **Durante la ejecución**: Los datos se guardan temporalmente en `keyboard_data/keyboard-data-<random>.json` cada 5 segundos
-2. **Al finalizar (Ctrl+C)**: El JSON se convierte automáticamente a CSV y se elimina el archivo temporal
-
-### Formato CSV Final
-
-Los datos finales se guardan en `keyboard_data/keyboard-data-<random>.csv` con formato de columnas:
-
-```csv
-timestamp,a,b,c,...,z,0,1,...,9,[ENTER],[CTRL_L]+c,[SHIFT_L]+a,...,avg_hold_time_ms,avg_inter_key_time_ms,...,active_application
-1733094304.092,5,3,2,...,0,0,0,...,2,1,0,...,150.5,200.3,...,Visual Studio Code
-1733094309.123,0,0,1,...,0,0,0,...,1,0,1,...,145.2,180.5,...,Terminal
-```
-
-**Cada 5 segundos** se crea una fila con:
-- `timestamp`: Unix timestamp (número)
-- Columnas de caracteres: conteo de cada carácter (0 si no se presionó)
-- Columnas de combinaciones: conteo de combinaciones detectadas (ej: `[CTRL_L]+c`)
-- Estadísticas temporales: tiempos promedio, velocidad, etc.
-- `active_application`: aplicación activa
-
-## 🔒 Aplicaciones Bloqueadas
-
-El archivo `blocked_apps.json` contiene la lista de aplicaciones donde **NO se capturan datos**:
-
-- Navegadores web (Chrome, Safari, Firefox, etc.)
-- Gestores de contraseñas (1Password, LastPass, etc.)
-
-Para agregar más aplicaciones, edita `blocked_apps.json`:
-
-```json
-{
-  "blocked_applications": [
-    "Google Chrome",
-    "Tu App Aquí"  ← Agregar aquí
-  ]
-}
-```
+### 💻 Aplicación
+- Nombre de la aplicación activa
+- Bundle ID (macOS) o ruta del ejecutable (Windows/Linux)
+- Título de la ventana activa
+- Process ID (PID)
 
 ## 📁 Archivos Generados
 
-- `keyboard_data/keyboard-data-<random>.csv` - Datos finales capturados (se crea al finalizar)
-- `keyboard_data/keyboard-data-<random>.json` - Datos temporales durante la ejecución (se elimina al finalizar)
-- `keylogger_char_count.log` - Logs del sistema
-- `blocked_apps.json` - Configuración de aplicaciones bloqueadas
-- `key_combinations.json` - Combinaciones de teclas detectadas (se actualiza automáticamente)
+Los datos se guardan en `keyboard_data/` con formato:
 
-## ⚠️ Advertencias
+- `data_YYYYMMDD_HHMMSS.csv` - Datos finales (ej: `data_20251214_143022.csv`)
+- `data_YYYYMMDD_HHMMSS.json` - Temporal (se elimina al finalizar)
 
-- **Solo para uso educativo y con consentimiento**
-- **NO uses en sistemas de otros sin permiso**
-- **Revisa los datos capturados antes de compartirlos**
+**Ventaja**: Los nombres con timestamp permiten ordenar y combinar fácilmente múltiples sesiones.
 
-## 🔍 Ejemplo
+## 📊 Formato CSV
 
-Si escribes "hola" en 5 segundos, el CSV guardará una fila con:
+Cada fila = 5 segundos de actividad (teclado + mouse + aplicación):
+
+```csv
+timestamp,a,b,c,...,total_clicks,left_clicks,scroll_up,scroll_down,clicks_screen_0,clicks_screen_1,active_application,...
+1703123456.789,5,2,1,...,15,12,5,3,12,3,"Safari",...
 ```
-timestamp: 1733094304.092
-h: 1
-o: 1
-l: 1
-a: 1
+
+### Columnas Principales
+
+**Teclado**:
+- `timestamp` - Marca de tiempo Unix
+- `a`, `b`, `c`... `z` - Conteo de cada letra
+- `0`, `1`... `9` - Conteo de cada número
+- `[ENTER]`, `[BACKSPACE]`, etc. - Teclas especiales
+- `[CTRL_L]+c`, `[SHIFT_L]+a` - Combinaciones detectadas
+
+**Mouse - Clics**:
+- `total_clicks` - Total de clics en el intervalo
+- `left_clicks`, `right_clicks`, `middle_clicks` - Clics por botón
+- `avg_x_position`, `avg_y_position` - Posición promedio de clics
+- `min_x`, `max_x`, `min_y`, `max_y` - Área de interacción
+- `clicks_per_second` - Velocidad de clics
+
+**Mouse - Scroll**:
+- `scroll_events` - Total de eventos de scroll
+- `scroll_up`, `scroll_down`, `scroll_left`, `scroll_right` - Dirección del scroll
+- `avg_scroll_magnitude` - Intensidad promedio del scroll
+- `scrolls_per_second` - Velocidad de scrolls
+- `avg_inter_scroll_time_ms` - Tiempo promedio entre scrolls
+
+**Mouse - Pantallas**:
+- `total_screens` - Número de pantallas detectadas (1, 2, 3...)
+- `most_used_screen` - Índice de la pantalla más usada
+- `clicks_screen_0`, `clicks_screen_1`, `clicks_screen_2` - Clics por pantalla
+- `scroll_screen_0`, `scroll_screen_1`, `scroll_screen_2` - Scroll por pantalla
+
+**Aplicación**:
+- `active_application` - Nombre de la app activa
+- `app_bundle_id` - Bundle ID o ruta del ejecutable
+- `app_window_title` - Título de la ventana
+- `app_process_id` - ID del proceso
+
+**Estadísticas del Teclado**:
+- `keystrokes_per_second` - Velocidad de escritura
+- `avg_hold_time_ms` - Tiempo promedio de presión
+- `avg_inter_key_time_ms` - Tiempo promedio entre teclas
+- `total_keystrokes` - Total de teclas en el intervalo
+
+## 🔒 Aplicaciones Bloqueadas
+
+Por defecto NO captura datos en:
+- Navegadores (Chrome, Safari, Firefox)
+- Gestores de contraseñas (1Password, LastPass)
+
+Edita `blocked_apps.json` para agregar/quitar apps.
+
+## 📋 Requisitos
+
+- Python 3.7+
+- macOS, Windows o Linux
+- `pynput` y `psutil` (instalación automática)
+
+## 🔍 Ejemplos
+
+### Ejemplo 1: Solo Teclado
+Si escribes "hola" en 5 segundos:
+```
+h: 1, o: 1, l: 1, a: 1
+total_keystrokes: 4
+keystrokes_per_second: 0.8
 (todas las demás columnas: 0)
-active_application: Visual Studio Code
 ```
 
-**NO se puede reconstruir** que escribiste "hola", solo que usaste esos caracteres.
+### Ejemplo 2: Teclado + Mouse
+Si escribes y haces clics en 5 segundos:
+```
+h: 1, o: 1, l: 1, a: 1
+total_clicks: 5
+left_clicks: 4, right_clicks: 1
+scroll_up: 3, scroll_down: 2
+clicks_screen_0: 5  (todos en pantalla principal)
+most_used_screen: 0
+```
 
-## 📊 Atributos Estadísticos Capturados
+**NO se puede reconstruir** que escribiste "hola" o qué hiciste exactamente, solo conteos y estadísticas.
 
-Cada fila incluye estadísticas temporales:
-- `avg_hold_time_ms`: Tiempo promedio de presión de teclas
-- `avg_inter_key_time_ms`: Tiempo promedio entre pulsaciones
-- `std_inter_key_time_ms`: Variabilidad en el ritmo
-- `min_inter_key_time_ms` / `max_inter_key_time_ms`: Rango de tiempos
-- `keystrokes_per_second`: Velocidad de escritura
-- `total_keystrokes`: Total de teclas en el intervalo
+## 🖥️ Detección de Múltiples Pantallas
 
-## 📝 Notas
+El sistema detecta automáticamente cuántas pantallas tienes conectadas y registra en qué pantalla ocurren los eventos:
 
-- Los caracteres se normalizan a minúsculas (A = a)
-- Se cuentan todas las teclas: letras, números, símbolos, teclas especiales y modificadoras
-- Las combinaciones de teclas (Ctrl+C, Shift+A, etc.) se detectan automáticamente y se agregan como columnas dinámicas
-- Si una aplicación bloqueada está activa, no se captura nada
-- El archivo JSON temporal se elimina automáticamente después de convertirse a CSV
+- **1 pantalla**: Solo `clicks_screen_0` y `scroll_screen_0`
+- **2 pantallas**: `clicks_screen_0`, `clicks_screen_1`, `scroll_screen_0`, `scroll_screen_1`
+- **3+ pantallas**: Se agregan campos dinámicamente
+
+El campo `most_used_screen` indica qué pantalla tuvo más actividad (clics + scrolls) en cada intervalo.
+
+## 📚 Documentación Completa
+
+Ver `DICCIONARIO_DATOS.md` para la lista completa de campos, tipos de datos, unidades y ejemplos detallados.
+
+## ⚠️ Uso Responsable
+
+- Solo para uso educativo y con consentimiento
+- NO usar en sistemas de otros sin permiso
+- Revisar datos antes de compartir
 
 ---
 
-**Uso responsable**: Este software es solo para fines educativos y de investigación. 🛡️
-
+**Uso educativo y de investigación únicamente** 🛡️
