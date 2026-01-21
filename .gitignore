@@ -59,3 +59,7 @@ htmlcov/
 
 # pyenv
 .python-version
+
+results/
+resultados/
+*.csv
